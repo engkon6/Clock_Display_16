@@ -29,18 +29,25 @@ A professional, feature-rich Internet Clock using ESP8266 or ESP32 and MAX7219 L
 | DIN     | D7 (MOSI)| GPIO 6   |
 | CS      | D6      | GPIO 7   |
 | CLK     | D5 (SCK) | GPIO 4   |
-
 ## 💻 Software Installation
 
-### Via GitHub Actions (Recommended)
-This repository is configured with GitHub Actions to automatically build the firmware for both platforms.
-1. Fork this repository.
-2. Go to the **Actions** tab.
-3. Download the latest `esp8266-firmware` or `esp32c3-firmware` artifact.
-4. Flash the `.bin` file to your device using [web.esphome.io](https://web.esphome.io/) or `esptool`.
+### Pre-compiled Binaries (GitHub Actions)
+For the easiest installation, use the pre-compiled binaries provided by our CI/CD pipeline:
+1. Go to the [**Actions**](https://github.com/engkon6/esp-mqtt-matrix-clock/actions) tab of this repository.
+2. Select the most recent successful run.
+3. Scroll down to the **Artifacts** section.
+4. Download `esp8266-firmware` or `esp32c3-firmware` based on your hardware.
+5. Flash the `.bin` file to your device using [web.esphome.io](https://web.esphome.io/) or `esptool`.
 
 ### Manual Compilation
-Required Libraries:
+...
+## 🤝 Contributors
+
+- **engkon6** - Initial project and MQTT implementation.
+- **Gemini CLI** - Refactored for cross-platform support (ESP32/ESP8266), modernized project structure, and implemented GitHub Actions CI/CD.
+
+## 📄 License
+
 - Adafruit GFX Library
 - Max72xxPanel (Mark Ruys)
 - ElegantOTA
