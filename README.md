@@ -1,12 +1,12 @@
 # ESP MQTT Matrix Clock
 
-A professional, feature-rich Internet Clock using [ESP8266](https://en.wikipedia.org/wiki/ESP8266) or [ESP32](https://en.wikipedia.org/wiki/ESP32) and [MAX7219](https://www.analog.com/en/products/max7219.html) LED Matrices. Features a web configuration portal, [NTP](https://en.wikipedia.org/wiki/Network_Time_Protocol) time synchronization, and [MQTT](https://en.wikipedia.org/wiki/MQTT) integration for remote messaging.
+Internet Clock using [ESP8266](https://en.wikipedia.org/wiki/ESP8266) or [ESP32](https://en.wikipedia.org/wiki/ESP32) and [MAX7219](https://www.analog.com/en/products/max7219.html) LED Matrices.
 
 ## 🚀 Features
 
 - **Dual Platform Support:** Compatible with ESP8266 (e.g., NodeMCU, D1 Mini) and ESP32 (e.g., ESP32-C3 Super Mini).
 - **Auto-Sync Time:** Uses [NTP](https://en.wikipedia.org/wiki/Network_Time_Protocol) to fetch accurate time automatically.
-- **Web Configuration:** [Captive portal](https://en.wikipedia.org/wiki/Captive_portal) for WiFi setup and a dedicated web UI for settings (Brightness, Timezone, NTP Server, MQTT).
+- **Web Configuration:** [Captive portal](https://en.wikipedia.org/wiki/Captive_portal) for WiFi setup and a dedicated web UI for settings (Brightness, Timezone, NTP Server, [MQTT](https://en.wikipedia.org/wiki/MQTT)).
 - **MQTT Integration:** 
   - Subscribes to commands to display custom scrolling text.
   - Publishes periodic [telemetry](https://en.wikipedia.org/wiki/Telemetry) (IP, Hostname, Sync Status).
@@ -16,9 +16,8 @@ A professional, feature-rich Internet Clock using [ESP8266](https://en.wikipedia
 
 ## 🛠 Hardware Required
 
-- **Microcontroller:** [ESP8266](https://en.wikipedia.org/wiki/ESP8266) or [ESP32-C3](https://en.wikipedia.org/wiki/ESP32).
-- **Display:** [MAX7219](https://www.analog.com/en/products/max7219.html) 8x8 [LED Matrix](https://en.wikipedia.org/wiki/LED_matrix) (typically a 4-in-1 module).
-- **Power:** 5V Micro [USB](https://en.wikipedia.org/wiki/USB).
+- **Microcontroller:** ESP8266 or ESP32.
+- **Display:** MAX7219 8x8 [LED Matrix](https://en.wikipedia.org/wiki/LED_matrix) (typically a 4-in-1 module).
 
 ### Wiring Diagram
 
@@ -37,13 +36,13 @@ Below is the connection scheme between the microcontroller and the LED matrix.
 
 #### Detailed Pinout Table
 
-| MAX7219 | ESP8266 (NodeMCU/D1) | ESP32-C3 (Super Mini) | Description |
-|---------|-----------------------|-----------------------|-------------|
-| **VCC** | 5V / VIN              | 5V                    | Power Supply (5V) |
-| **GND** | GND                   | GND                   | Ground |
-| **DIN** | D7 ([MOSI](https://en.wikipedia.org/wiki/Serial_Peripheral_Interface#Master_out,_slave_in_(MOSI))) | GPIO 6                | Data Input |
-| **CS**  | D6 ([SS](https://en.wikipedia.org/wiki/Serial_Peripheral_Interface#Slave_select_(SS)))   | GPIO 7                | Chip Select |
-| **CLK** | D5 ([SCK](https://en.wikipedia.org/wiki/Serial_Peripheral_Interface#Serial_clock_(SCLK)))  | GPIO 4                | Serial Clock |
+| MAX7219 | ESP8266 (NodeMCU/D1) | ESP32-C3 (Super Mini) | Description       |
+|---------|----------------------|-----------------------|-------------------|
+| **VCC** | 5V / VIN             | 5V                    | Power Supply (5V) |
+| **GND** | GND                  | GND                   | Ground            |
+| **DIN** | D7 (MOSI)            | GPIO 6                | Data Input        |
+| **CS**  | D6 (MISO)            | GPIO 5                | Chip Select       |
+| **CLK** | D5 (SCLK)            | GPIO 4                | Serial Clock      |
 
 ## 💻 Software Installation
 
