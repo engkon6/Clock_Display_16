@@ -26,11 +26,11 @@ Below is the connection scheme between the microcontroller and the LED matrix.
 ```text
        [ Microcontroller ]             [ MAX7219 LED Matrix ]
       +-------------------+           +----------------------+
-      |      5V / VIN     | --------> |         VCC          |
+      |        5V         | --------> |         VCC          |
       |        GND        | --------> |         GND          |
-      |  MOSI (D7 / G6)   | --------> |         DIN          |
-      |   CS  (D6 / G7)   | --------> |         CS           |
-      |   SCK (D5 / G4)   | --------> |         CLK          |
+      |        MOSI       | --------> |         DIN          |
+      |        MISO       | --------> |         CS           |
+      |        SLCK       | --------> |         CLK          |
       +-------------------+           +----------------------+
 ```
 
@@ -38,7 +38,7 @@ Below is the connection scheme between the microcontroller and the LED matrix.
 
 | MAX7219 | ESP8266 (NodeMCU/D1) | ESP32-C3 (Super Mini) | Description       |
 |---------|----------------------|-----------------------|-------------------|
-| **VCC** | 5V / VIN             | 5V                    | Power Supply (5V) |
+| **VCC** | 5V                   | 5V                    | Power Supply (5V) |
 | **GND** | GND                  | GND                   | Ground            |
 | **DIN** | D7 (MOSI)            | GPIO 6                | Data Input        |
 | **CS**  | D6 (MISO)            | GPIO 5                | Chip Select       |
