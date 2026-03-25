@@ -1,34 +1,49 @@
 # ESP MQTT Matrix Clock
 
-A professional, feature-rich Internet Clock using ESP8266 or ESP32 and MAX7219 LED Matrices. Features a web configuration portal, NTP time synchronization, and MQTT integration for remote messaging.
+A professional, feature-rich Internet Clock using [ESP8266](https://en.wikipedia.org/wiki/ESP8266) or [ESP32](https://en.wikipedia.org/wiki/ESP32) and [MAX7219](https://www.analog.com/en/products/max7219.html) LED Matrices. Features a web configuration portal, [NTP](https://en.wikipedia.org/wiki/Network_Time_Protocol) time synchronization, and [MQTT](https://en.wikipedia.org/wiki/MQTT) integration for remote messaging.
 
 ## 🚀 Features
 
 - **Dual Platform Support:** Compatible with ESP8266 (e.g., NodeMCU, D1 Mini) and ESP32 (e.g., ESP32-C3 Super Mini).
-- **Auto-Sync Time:** Uses NTP to fetch accurate time automatically.
-- **Web Configuration:** Captive portal for WiFi setup and a dedicated web UI for settings (Brightness, Timezone, NTP Server, MQTT).
+- **Auto-Sync Time:** Uses [NTP](https://en.wikipedia.org/wiki/Network_Time_Protocol) to fetch accurate time automatically.
+- **Web Configuration:** [Captive portal](https://en.wikipedia.org/wiki/Captive_portal) for WiFi setup and a dedicated web UI for settings (Brightness, Timezone, NTP Server, MQTT).
 - **MQTT Integration:** 
   - Subscribes to commands to display custom scrolling text.
-  - Publishes periodic telemetry (IP, Hostname, Sync Status).
-- **OTA Updates:** Support for wireless firmware updates via ElegantOTA.
+  - Publishes periodic [telemetry](https://en.wikipedia.org/wiki/Telemetry) (IP, Hostname, Sync Status).
+- **OTA Updates:** Support for [Over-the-Air](https://en.wikipedia.org/wiki/Over-the-air_programming) (OTA) firmware updates via ElegantOTA.
 - **Dynamic Layout:** Supports 2 to 4 MAX7219 8x8 matrix modules.
 - **12h/24h Modes:** Toggleable via web interface.
 
 ## 🛠 Hardware Required
 
-- **Microcontroller:** ESP8266 or ESP32-C3.
-- **Display:** MAX7219 8x8 LED Matrix (typically a 4-in-1 module).
-- **Power:** 5V Micro USB.
+- **Microcontroller:** [ESP8266](https://en.wikipedia.org/wiki/ESP8266) or [ESP32-C3](https://en.wikipedia.org/wiki/ESP32).
+- **Display:** [MAX7219](https://www.analog.com/en/products/max7219.html) 8x8 [LED Matrix](https://en.wikipedia.org/wiki/LED_matrix) (typically a 4-in-1 module).
+- **Power:** 5V Micro [USB](https://en.wikipedia.org/wiki/USB).
 
-### Wiring (Default)
+### Wiring Diagram
 
-| MAX7219 | ESP8266 | ESP32-C3 |
-|---------|---------|----------|
-| VCC     | 5V / VIN| 5V       |
-| GND     | GND     | GND      |
-| DIN     | D7 (MOSI)| GPIO 6   |
-| CS      | D6      | GPIO 7   |
-| CLK     | D5 (SCK) | GPIO 4   |
+Below is the connection scheme between the microcontroller and the LED matrix.
+
+```text
+       [ Microcontroller ]             [ MAX7219 LED Matrix ]
+      +-------------------+           +----------------------+
+      |      5V / VIN     | --------> |         VCC          |
+      |        GND        | --------> |         GND          |
+      |  MOSI (D7 / G6)   | --------> |         DIN          |
+      |   CS  (D6 / G7)   | --------> |         CS           |
+      |   SCK (D5 / G4)   | --------> |         CLK          |
+      +-------------------+           +----------------------+
+```
+
+#### Detailed Pinout Table
+
+| MAX7219 | ESP8266 (NodeMCU/D1) | ESP32-C3 (Super Mini) | Description |
+|---------|-----------------------|-----------------------|-------------|
+| **VCC** | 5V / VIN              | 5V                    | Power Supply (5V) |
+| **GND** | GND                   | GND                   | Ground |
+| **DIN** | D7 ([MOSI](https://en.wikipedia.org/wiki/Serial_Peripheral_Interface#Master_out,_slave_in_(MOSI))) | GPIO 6                | Data Input |
+| **CS**  | D6 ([SS](https://en.wikipedia.org/wiki/Serial_Peripheral_Interface#Slave_select_(SS)))   | GPIO 7                | Chip Select |
+| **CLK** | D5 ([SCK](https://en.wikipedia.org/wiki/Serial_Peripheral_Interface#Serial_clock_(SCLK)))  | GPIO 4                | Serial Clock |
 
 ## 💻 Software Installation
 
@@ -39,20 +54,20 @@ Download the pre-compiled `.bin` files for your specific architecture from the [
 2. Flash the file to your device using [web.esphome.io](https://web.esphome.io/) or `esptool`.
 
 ### Manual Compilation
-Required Libraries:
-- Adafruit GFX Library
-- Max72xxPanel (Mark Ruys)
-- ElegantOTA
-- WiFiManager
-- PubSubClient
+Required Libraries (install via [Arduino Library Manager](https://docs.arduino.cc/software/ide-v1/tutorials/installing-libraries)):
+- **Adafruit GFX Library:** Core graphics library.
+- **Max72xxPanel:** Hardware driver for the matrix.
+- **ElegantOTA:** For wireless updates.
+- **WiFiManager:** For easy WiFi configuration.
+- **PubSubClient:** For MQTT communication.
 
 ## ⚙️ Configuration
 
-1. **WiFi Setup:** On first boot, the device creates an AP named `Clock-XXXXXX`. Connect to it and configure your WiFi credentials.
-2. **Web UI:** Once connected, find the device's IP address on the scrolling display. Navigate to `http://<device-ip>` in your browser.
+1. **WiFi Setup:** On first boot, the device creates an [Access Point](https://en.wikipedia.org/wiki/Wireless_access_point) (AP) named `Clock-XXXXXX`. Connect to it with your smartphone or PC and configure your WiFi credentials.
+2. **Web UI:** Once connected, find the device's [IP address](https://en.wikipedia.org/wiki/IP_address) on the scrolling display. Navigate to `http://<device-ip>` in your browser.
 3. **MQTT Commands:**
    - **Topic:** `cmnd/<hostname>/DisplayText`
-   - **Payload:** Any string (it will scroll once across the display).
+   - **Payload:** Any text string (it will scroll once across the display).
 
 ## 📄 License
-This project is open-source and available under the MIT License.
+This project is open-source and available under the [MIT License](https://opensource.org/licenses/MIT).
