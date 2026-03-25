@@ -1,4 +1,4 @@
-name: Compile ESP8266 Firmware
+name: Build Firmware
 
 on:
   push:
@@ -7,7 +7,20 @@ on:
 
 jobs:
   build:
+    name: Build for ${{ matrix.board }}
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - board: esp8266
+            fqbn: esp8266:esp8266:nodemcuv2
+            platform_url: https://arduino.esp8266.com/stable/package_esp8266com_index.json
+            core: esp8266:esp8266
+          - board: esp32c3
+            fqbn: esp32:esp32:esp32c3:CDCOnBoot=cdc,FlashMode=dio
+            platform_url: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+            core: esp32:esp32
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,9 +33,9 @@ jobs:
       - name: Configure arduino-cli
         run: |
           arduino-cli config init
-          arduino-cli config set board_manager.additional_urls https://arduino.esp8266.com/stable/package_esp8266com_index.json
+          arduino-cli config set board_manager.additional_urls ${{ matrix.platform_url }}
           arduino-cli core update-index
-          arduino-cli core install esp8266:esp8266
+          arduino-cli core install ${{ matrix.core }}
 
       - name: Install Libraries
         run: |
@@ -35,10 +48,10 @@ jobs:
 
       - name: Compile Sketch
         run: |
-          arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --output-dir ./build .
+          arduino-cli compile --fqbn ${{ matrix.fqbn }} --output-dir ./build .
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: esp8266-firmware
+          name: ${{ matrix.board }}-firmware
           path: ./build/*.bin

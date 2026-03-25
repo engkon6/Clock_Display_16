@@ -1,11 +1,19 @@
 /*
-Project: MAX7219 Internet Clock (GFX Version) + MQTT
-Based on: Stable v3.4
+Project: ESP MQTT Matrix Clock
+Description: MAX7219 Internet Clock (GFX Version) + MQTT
+Compatible with: ESP8266 and ESP32
 Libraries: Adafruit GFX, Max72xxPanel, ElegantOTA, WiFiManager, PubSubClient
 */
 
-#include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
+#ifdef ESP32
+  #include <WiFi.h>
+  #include <WebServer.h>
+  #include <FS.h>
+#elif defined(ESP8266)
+  #include <ESP8266WiFi.h>
+  #include <ESP8266WebServer.h>
+#endif
+
 #include <ElegantOTA.h>
 #include <SPI.h>
 #include <Adafruit_GFX.h>
@@ -13,10 +21,15 @@ Libraries: Adafruit GFX, Max72xxPanel, ElegantOTA, WiFiManager, PubSubClient
 #include <time.h>
 #include <LittleFS.h>
 #include <WiFiManager.h>
-#include <PubSubClient.h> // --- NEW: MQTT Library ---
+#include <PubSubClient.h>
 
 // ================= HARDWARE =================
-#define CS_PIN   D6
+#ifdef ESP32
+  #define CS_PIN   7  // Typical for ESP32-C3 Super Mini (GPIO 7)
+#else
+  #define CS_PIN   D6 // Default for NodeMCU/D1 Mini
+#endif
+
 #define H_DISPLAYS 4
 #define V_DISPLAYS 1
 
@@ -28,18 +41,18 @@ uint8_t displayIntensity = 1;
 uint8_t activeDevices = 4;
 bool is24h = true;
 
-// --- NEW: MQTT Settings ---
+// --- MQTT Settings ---
 char mqttServer[64] = "";
 int  mqttPort = 1883;
 char mqttUser[32] = "";
 char mqttPassword[32] = "";
 unsigned long lastTeleTick = 0;
-int telePeriod = 60; // Default 60 seconds
+int telePeriod = 60; 
 
 // ================= STATUS FLAGS =================
 bool ntpSynced = false;
 unsigned long lastNtpCheck = 0;
-const unsigned long ntpCheckInterval = 10000; // 10s
+const unsigned long ntpCheckInterval = 10000; 
 
 bool mqttConnected = false;
 unsigned long lastMqttChange = 0;
@@ -47,15 +60,29 @@ unsigned long lastMqttChange = 0;
 // --------------------------
 
 char szTime[14] = ""; 
-ESP8266WebServer server(80);
+#ifdef ESP32
+  WebServer server(80);
+#else
+  ESP8266WebServer server(80);
+#endif
+
 WiFiClient espClient;
-PubSubClient client(espClient); // --- NEW: MQTT Client ---
+PubSubClient client(espClient); 
 
 // Initialize GFX Matrix
 Max72xxPanel matrix = Max72xxPanel(CS_PIN, H_DISPLAYS, V_DISPLAYS);
 
 unsigned long lastSecondTick = 0;
-String incomingMqttMessage = ""; // Flag to trigger scrolling in loop
+String incomingMqttMessage = ""; 
+
+// ================= HELPERS =================
+String getUniqueId() {
+#ifdef ESP32
+  return String((uint32_t)ESP.getEfuseMac(), HEX);
+#else
+  return String(ESP.getChipId(), HEX);
+#endif
+}
 
 // ================= FILESYSTEM =================
 void saveSettings() {
@@ -67,14 +94,11 @@ void saveSettings() {
   f.println(gmtOffset_sec);
   f.println(displayIntensity);
   f.println(is24h ? "1" : "0");
-  
-  // --- NEW: Save MQTT ---
   f.println(mqttServer);
   f.println(mqttPort);
   f.println(mqttUser);
   f.println(mqttPassword);
-  f.println(telePeriod); // Save Tele Period
-  // ----------------------
+  f.println(telePeriod); 
   f.close();
 }
 
@@ -90,13 +114,11 @@ void loadSettings() {
   s = f.readStringUntil('\n'); s.trim(); if (s.length()) displayIntensity = constrain(s.toInt(), 0, 15);
   s = f.readStringUntil('\n'); s.trim(); is24h = (s == "1");
 
-  // --- NEW: Load MQTT ---
   s = f.readStringUntil('\n'); s.trim(); if (s.length()) s.toCharArray(mqttServer, 64);
   s = f.readStringUntil('\n'); s.trim(); if (s.length()) mqttPort = s.toInt();
   s = f.readStringUntil('\n'); s.trim(); if (s.length()) s.toCharArray(mqttUser, 32);
   s = f.readStringUntil('\n'); s.trim(); if (s.length()) s.toCharArray(mqttPassword, 32);
   s = f.readStringUntil('\n'); s.trim(); if (s.length()) telePeriod = s.toInt();
-  // ----------------------
   
   f.close();
 }
@@ -109,7 +131,7 @@ void checkNtpStatus() {
   lastNtpCheck = millis();
 
   struct tm t;
-  if (getLocalTime(&t, 100)) {
+  if (getLocalTime(&t)) {
     if (!ntpSynced) {
       ntpSynced = true;
       Serial.println("NTP synced");
@@ -197,14 +219,13 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   Serial.print("]: ");
   Serial.println(message);
   
-  // Set the global variable so the main loop can scroll the text
   incomingMqttMessage = message;
 }
 
 void reconnectMqtt() {
   if (strlen(mqttServer) == 0) return;
 
-  String clientId = String(customHostname) + "-" + String(ESP.getChipId(), HEX);
+  String clientId = String(customHostname) + "-" + getUniqueId();
 
   bool connected = (strlen(mqttUser) > 0)
       ? client.connect(clientId.c_str(), mqttUser, mqttPassword)
@@ -240,7 +261,6 @@ void showStatusIfNeeded() {
 // ================= DISPLAY LOGIC =================
 
 void updateDisplay() {
-  // If we are currently scrolling a message, don't update time
   struct tm t;
   if (!getLocalTime(&t)) return;
   
@@ -276,7 +296,6 @@ String getHTML() {
   int h_part = gmtOffset_sec / 3600;
   int m_part = abs(gmtOffset_sec % 3600) / 60;
   
-  // Construct the full topic string for the user to copy
   String fullMqttTopic = "cmnd/" + String(customHostname) + "/DisplayText";
 
   String h = "<html><head><title>Clock Config</title><meta name='viewport' content='width=device-width, initial-scale=1'>";
@@ -306,7 +325,6 @@ String getHTML() {
   h += "<input type='number' min='-12' max='14' name='tzH' value='"+String(h_part)+"' placeholder='Hr'>";
   h += "<input type='number' min='0' max='59' name='tzM' value='"+String(m_part)+"' placeholder='Min'></div>";
 
-  // --- NEW: MQTT UI ---
   h += "<hr><h3>MQTT Config</h3>";
   h += "<p style='font-size:12px; color:#666; margin-bottom:5px;'>Publish message to:</p>";  
   h += "<div class='mqtt-info'>" + fullMqttTopic + "</div>";
@@ -315,13 +333,10 @@ String getHTML() {
   h += "<label>Port:</label><input name='mqPort' type='number' value='" + String(mqttPort) + "'>";
   h += "<label>User (Optional):</label><input name='mqUser' value='" + String(mqttUser) + "'>";
   h += "<label>Password (Optional):</label><input name='mqPass' type='password' value='" + String(mqttPassword) + "'>";
-  // --------------------
   
   h += "<input type='submit' value='Save & Apply' class='btn save'></form>";
-  
   h += "<a href='/reboot' class='btn reboot'>Reboot Device</a>";
   h += "<a href='/update' class='btn ota'>OTA Update</a>";
-  
   h += "<form action='/factory' method='POST' onsubmit='return confirm(\"Reset all?\")'><input type='submit' value='FACTORY RESET' class='btn reset'></form></div></body></html>";
   return h;
 }
@@ -345,42 +360,32 @@ void setup() {
   WiFiManager wm;
   wm.setAPCallback(configModeCallback); 
 
-  if (strlen(customHostname) == 0) sprintf(customHostname, "Clock-%06X", ESP.getChipId());
+  if (strlen(customHostname) == 0) {
+    String host = "Clock-" + getUniqueId();
+    host.toCharArray(customHostname, 32);
+  }
   
-  // Set a timeout (e.g., 180 seconds). 
-  // If it can't connect to WiFi within this time, it will give up.
   wm.setConnectTimeout(30); 
 
-  // Try to connect. If it fails, it AUTOMATICALLY opens the AP.
-  // It only returns 'false' if the user fails to configure it inside the AP 
-  // within a specific timeout (if you set one), or hits "Exit".
   if (!wm.autoConnect(customHostname)) {
     Serial.println("Failed to connect and hit timeout");
-    // Only restart if even the AP configuration failed or timed out
     ESP.restart();
   }
 
-  // 2. Trigger NTP immediately (starts background sync)
   configTime(gmtOffset_sec, 0, ntpServer);
 
-  // 3. Setup MQTT (if configured)
   if (strlen(mqttServer) > 0) {
     client.setServer(mqttServer, mqttPort);
     client.setCallback(mqttCallback);
   }
 
-  // 4. Scroll IP (Time syncs in background during this ~3-5 second animation)
   scrollTextBlocking("IP:" + WiFi.localIP().toString());
 
-  // 5. Check Time instantly
-  // If config is correct, this returns immediately. 
-  // If wrong, we wait only 500ms before alerting.
   struct tm timeinfo;
-  if (!getLocalTime(&timeinfo, 500)) { 
-      scrollTextBlocking("NTP Error: Check URL"); // Explicit message
+  if (!getLocalTime(&timeinfo)) { 
+      scrollTextBlocking("NTP Error: Check URL");
   }
   
-  // 6. Init Web Server & OTA
   server.on("/", []() { server.send(200, "text/html", getHTML()); });
   
   server.on("/save", HTTP_POST, []() {
@@ -405,7 +410,6 @@ void setup() {
       configTime(gmtOffset_sec, 0, ntpServer);
     }
 
-    // MQTT Save
     if (server.hasArg("mqServer")) server.arg("mqServer").toCharArray(mqttServer, 64);
     if (server.hasArg("mqPort")) mqttPort = server.arg("mqPort").toInt();
     if (server.hasArg("mqUser")) server.arg("mqUser").toCharArray(mqttUser, 32);
@@ -439,32 +443,20 @@ void setup() {
 
 void monitorConnections() {
   static unsigned long lastStatusCheck = 0;
-  // Check every 30 seconds so we don't annoy the user
   if (millis() - lastStatusCheck < 30000) return;
   lastStatusCheck = millis();
 
-  // ERROR TYPE 1: NTP Config is likely wrong
-  // Logic: We have WiFi, but Time is NOT synced.
   if (WiFi.status() == WL_CONNECTED && !ntpSynced) {
     scrollTextBlocking("NTP Error");
   }
-
-  // ERROR TYPE 2: MQTT Config is wrong (Optional)
-  // Logic: User put in an MQTT IP, but we aren't connected.
-  if (strlen(mqttServer) > 0 && !mqttConnected) {
-    // Only show this if you want to know MQTT is broken
-    // scrollTextBlocking("MQTT Error"); 
-  }
 }
 
-// ================= MAIN LOOPS =================
 void loop() {
   server.handleClient();
   ElegantOTA.loop();
   
-  checkNtpStatus(); // Updates the boolean 'ntpSynced'
+  checkNtpStatus(); 
   
-  // 1. MQTT Reconnect & Keep-alive
   if (strlen(mqttServer) > 0) {
     if (!client.connected()) {
        static unsigned long lastMqttAttempt = 0;
@@ -485,7 +477,6 @@ void loop() {
     }
   }
 
-  // 2. Trigger Display if message received
   if (incomingMqttMessage != "") {
     scrollTextBlocking(incomingMqttMessage);
     incomingMqttMessage = ""; 
@@ -493,12 +484,10 @@ void loop() {
     lastSecondTick = millis(); 
   }
   
-  // 3. Update Time
   if (millis() - lastSecondTick >= 1000) {
     lastSecondTick = millis();
     updateDisplay();
   }
 
-  // 4. Monitor Status (Intelligent Errors)
   monitorConnections(); 
 }
